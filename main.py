@@ -4,7 +4,7 @@ from AudioTranscriber import AudioTranscriber
 from GPTResponder import GPTResponder
 import customtkinter as ctk
 from Microphone import Microphone
-from AudioRecorder import AudioRecorder
+import AudioRecorder 
 import queue
 import os
 
@@ -32,9 +32,8 @@ def update_response_UI(responder, textbox, update_interval_slider_label, update_
 
     textbox.after(300, update_response_UI, responder, textbox, update_interval_slider_label, update_interval_slider)
 
-def clear_transcript_data(transcriber_mic, transcriber_speaker):
-    transcriber_mic.transcript_data.clear()
-    transcriber_speaker.transcript_data.clear()
+def clear_transcript_data(transcriber):
+    transcriber.transcript_data.clear()
 
 def clear_temp_files():
     for file in os.listdir():
@@ -58,9 +57,6 @@ if __name__ == "__main__":
     response_textbox = ctk.CTkTextbox(root, width=300, font=("Arial", font_size), text_color='#639cdc', wrap="word")
     response_textbox.grid(row=0, column=1, padx=10, pady=20, sticky="nsew")
 
-     # Add the clear transcript button to the UI
-    clear_transcript_button = ctk.CTkButton(root, text="Clear Transcript", command=lambda: clear_transcript_data(user_transcriber, transcriber_speaker))
-    clear_transcript_button.grid(row=1, column=0, padx=10, pady=3, sticky="nsew")
     # empty label, necessary for proper grid spacing
     update_interval_slider_label = ctk.CTkLabel(root, text=f"", font=("Arial", 12), text_color="#FFFCF2")
     update_interval_slider_label.grid(row=1, column=1, padx=10, pady=3, sticky="nsew")
@@ -74,17 +70,8 @@ if __name__ == "__main__":
 
     audio_queue = queue.Queue()
 
-    user_mirophone = Microphone(str(sc.default_microphone().name), False)
-    user_audio_recorder = AudioRecorder(user_mirophone)
-
-    record_user = threading.Thread(target=user_audio_recorder.record_into_queue, args=(audio_queue, "You",))
-    record_user.start()
-
-    speaker_mirophone = Microphone(str(sc.default_speaker().name), True)
-    speaker_audio_recorder = AudioRecorder(speaker_mirophone)
-
-    record_speaker = threading.Thread(target=speaker_audio_recorder.record_into_queue, args=(audio_queue, "Speaker",))
-    record_speaker.start()
+    user_audio_recorder = AudioRecorder.DefaultMicRecorder()
+    user_audio_recorder.record_into_queue(audio_queue)
 
     global_transcriber = AudioTranscriber()
     transcribe = threading.Thread(target=global_transcriber.create_transcription_from_queue, args=(audio_queue,))
@@ -101,6 +88,10 @@ if __name__ == "__main__":
     root.grid_rowconfigure(4, weight=1)
     root.grid_columnconfigure(0, weight=2)
     root.grid_columnconfigure(1, weight=1)
+
+     # Add the clear transcript button to the UI
+    clear_transcript_button = ctk.CTkButton(root, text="Clear Transcript", command=lambda: clear_transcript_data(global_transcriber, ))
+    clear_transcript_button.grid(row=1, column=0, padx=10, pady=3, sticky="nsew")
 
     update_transcript_UI(global_transcriber, transcript_textbox)
     update_response_UI(responder, response_textbox, update_interval_slider_label, update_interval_slider)
