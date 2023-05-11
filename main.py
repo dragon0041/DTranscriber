@@ -7,6 +7,7 @@ from Microphone import Microphone
 import AudioRecorder 
 import queue
 import os
+import time
 
 def write_in_textbox(textbox, text):
     textbox.delete("0.0", "end")
@@ -73,13 +74,20 @@ if __name__ == "__main__":
     user_audio_recorder = AudioRecorder.DefaultMicRecorder()
     user_audio_recorder.record_into_queue(audio_queue)
 
-    global_transcriber = AudioTranscriber()
+    time.sleep(2)
+
+    speaker_audio_recorder = AudioRecorder.DefaultSpeakerRecorder()
+    speaker_audio_recorder.record_into_queue(audio_queue)
+
+    global_transcriber = AudioTranscriber(user_audio_recorder, speaker_audio_recorder)
     transcribe = threading.Thread(target=global_transcriber.create_transcription_from_queue, args=(audio_queue,))
     transcribe.start()
 
     responder = GPTResponder()
     respond = threading.Thread(target=responder.respond_to_transcriber, args=(global_transcriber,))
     respond.start()
+
+    print("READY")
 
     root.grid_rowconfigure(0, weight=100)
     root.grid_rowconfigure(1, weight=10)
