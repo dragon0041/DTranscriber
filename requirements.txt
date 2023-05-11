@@ -7,4 +7,3 @@ pyaudio
 openai
 customtkinter
 SpeechRecognition==2.1.3
-pyaudiowpatch
